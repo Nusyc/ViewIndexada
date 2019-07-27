@@ -1,0 +1,52 @@
+--------------------------
+-- CONSULTA EM QUESTÃO
+--------------------------
+SELECT
+	ISNULL(SUM(ISNULL(VALUE,0) + ISNULL(VALUE2,0)),0) AS SOMA_TOTAL,
+	B.OrderDate AS DATA,
+	A.CompanyName
+
+FROM
+	CustomersBig A
+LEFT JOIN OrdersBig B ON A.CustomerID = B.CustomerID
+
+GROUP BY
+	A.CustomerID,
+	A.CompanyName,
+	B.OrderDate
+-----------------------
+-- VIEW INDEXADA
+-----------------------
+CREATE VIEW VW_CALCULO
+WITH SCHEMABINDING
+AS
+
+SELECT
+	COUNT_BIG(*) AS QTD,
+	SUM(ISNULL(VALUE,0) + ISNULL(VALUE2,0))  AS SOMA_TOTAL,
+	A.CustomerID,
+	A.CompanyName,
+	B.OrderDate
+FROM
+	DBO.CustomersBig A
+INNER JOIN DBO.OrdersBig B ON A.CustomerID = B.CustomerID
+GROUP BY
+	A.CustomerID,
+	A.CompanyName,
+	B.OrderDate
+---------------------
+--	INDEX.
+---------------------
+CREATE UNIQUE CLUSTERED INDEX IX_VW_CALCULO ON VW_CALCULO
+(CustomerID,CompanyName,OrderDate)
+---------------------
+SELECT
+	ISNULL(B.SOMA_TOTAL,0) AS SOMA_TOTAL,
+	A.CompanyName,
+	B.OrderDate
+FROM
+	CustomersBig A
+LEFT JOIN VW_CALCULO B ON A.CustomerID = B.CustomerID
+
+
+
